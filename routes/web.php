@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\BeritaController; 
 use App\Models\News;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -16,16 +17,12 @@ use Illuminate\Support\Facades\Hash;
 
 // Halaman Home: Menampilkan hanya berita yang sudah di-ACC (Published)
 Route::get('/', function () {
-    /** * PERBAIKAN: Menggunakan with('user') agar nama penulis tidak ANONIM.
-     * Laravel akan mencocokkan user_id di tabel news dengan id di tabel users.
-     */
     $news = News::with('user')->where('status', 'published')->latest()->get();
     return view('home', compact('news'));
 })->name('home');
 
 // Halaman Detail Berita
 Route::get('/berita/{id}', function ($id) {
-    // Menambahkan with('user') agar di halaman detail nama penulis juga muncul
     $item = News::with('user')->findOrFail($id);
     return view('detail', compact('item'));
 })->name('berita.detail');
