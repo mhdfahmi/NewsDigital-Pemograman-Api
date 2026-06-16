@@ -38,6 +38,16 @@ Route::get('/login-page', function () {
     return view('loginregister');
 })->name('login');
 
+// TAMBAHAN FITUR (EAS POIN 3): Halaman Landing Page Panduan / Dokumentasi API
+Route::get('/dokumentasi', function () {
+    return view('dokumentasi');
+})->name('api.documentation');
+
+// TAMBAHAN FITUR (EAS POIN 4): Halaman API Client Tester (Postman Web-Style Interface)
+Route::get('/client-test', function () {
+    return view('client_test');
+})->name('api.client_test');
+
 
 /*
 |--------------------------------------------------------------------------
@@ -129,5 +139,13 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/berita/{id}', [DashboardController::class, 'destroy'])->name('berita.destroy');
     Route::get('/profile', [DashboardController::class, 'profile'])->name('profile');
     Route::post('/profile/update', [DashboardController::class, 'updateProfile'])->name('profile.update');
+
+    // TAMBAHAN FITUR: Route View sebelum Edit & Proses Simpan Koreksi Berita
+    Route::get('/berita/{id}/edit', [DashboardController::class, 'edit'])->name('berita.edit');
+    Route::post('/berita/{id}/update', [DashboardController::class, 'update'])->name('berita.update');
+
+    // --- TAMBAHAN FITUR API KEY (EAS POIN 1) ---
+    // Proses pembuatan / generate ulang API KEY unik via halaman Profile
+    Route::post('/profile/generate-api-key', [DashboardController::class, 'generateApiKey'])->name('profile.generate_key');
 
 });

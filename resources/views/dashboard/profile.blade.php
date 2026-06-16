@@ -18,7 +18,7 @@
             <i data-lucide="arrow-left"></i> KEMBALI
         </a>
         <div class="flex items-center gap-4">
-             <span class="px-4 py-1.5 bg-slate-100 rounded-full text-[10px] font-black uppercase tracking-widest">{{ auth()->user()->admin }}</span>
+             <span class="px-4 py-1.5 bg-slate-100 rounded-full text-[10px] font-black uppercase tracking-widest">{{ auth()->user()->role }}</span>
         </div>
     </nav>
 
@@ -28,11 +28,11 @@
                 {{ substr(auth()->user()->name, 0, 1) }}
             </div>
             <h1 class="text-3xl font-black italic uppercase tracking-tighter">Pengaturan <span class="text-indigo-600">Profil</span></h1>
-            <p class="text-slate-400 mt-2 text-sm">Kelola informasi akun Anda di sini.</p>
+            <p class="text-slate-400 mt-2 text-sm">Kelola informasi akun dan kredensial API Anda di sini.</p>
         </div>
 
         @if(session('success'))
-            <div class="bg-green-500 text-white p-4 rounded-2xl mb-8 font-bold text-center animate-bounce">
+            <div class="bg-green-500 text-white p-4 rounded-2xl mb-8 font-bold text-center animate-bounce shadow-lg">
                 {{ session('success') }}
             </div>
         @endif
@@ -68,8 +68,53 @@
                 </button>
             </form>
         </div>
+
+        <div class="mt-8 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden p-10">
+            <div class="flex items-center gap-4 mb-4">
+                <div class="p-3 bg-indigo-50 text-indigo-600 rounded-2xl">
+                    <i data-lucide="key-round" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h2 class="text-lg font-black text-slate-900 tracking-tight">Kredensial API KEY</h2>
+                    <p class="text-xs text-slate-400 font-medium">Gunakan kunci ini untuk mengakses data via Postman atau Aplikasi Client.</p>
+                </div>
+            </div>
+
+            <hr class="border-slate-50 mb-6">
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3 italic">API KEY Anda</label>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <input type="text" readonly 
+                               value="{{ auth()->user()->api_key ?? 'Belum ada API KEY. Silakan generate terlebih dahulu.' }}"
+                               class="flex-1 px-6 py-4 bg-slate-50 border-none rounded-2xl font-mono text-xs outline-none select-all {{ auth()->user()->api_key ? 'text-indigo-600 font-bold' : 'italic text-slate-300' }}">
+                        
+                        <form action="{{ route('profile.generate_key') }}" method="POST" class="inline">
+                            @csrf
+                            <button type="submit" class="w-full sm:w-auto bg-slate-900 text-white px-6 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-md active:scale-95 whitespace-nowrap">
+                                {{ auth()->user()->api_key ? 'GENERATE ULANG' : 'BUAT API KEY' }}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                @if(auth()->user()->api_key)
+                <div class="p-4 bg-amber-50/60 border border-amber-100/70 rounded-2xl flex items-start gap-3">
+                    <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-500 shrink-0 mt-0.5"></i>
+                    <p class="text-xs text-amber-700 leading-relaxed font-medium">
+                        <strong>Peringatan Keamanan:</strong> Jangan bagikan API KEY ini kepada siapa pun. Masukkan kunci ini pada Header <code class="bg-amber-100 px-1.5 py-0.5 rounded font-mono font-bold text-amber-800">X-API-KEY</code> saat melakukan request data melalui Postman atau Web Client.
+                    </p>
+                </div>
+                @endif
+            </div>
+        </div>
+
     </div>
 
-    <script>lucide.createIcons();</script>
+    <script>
+        // Inisialisasi ikon Lucide agar muncul di halaman
+        lucide.createIcons();
+    </script>
 </body>
 </html>

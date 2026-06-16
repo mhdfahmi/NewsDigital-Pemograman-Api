@@ -6,14 +6,7 @@ use App\Models\User;
 use App\Models\News;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
-
-/*
-|--------------------------------------------------------------------------
-| API Routes - File: routes/api.php
-|--------------------------------------------------------------------------
-| File ini menangani semua request dari Thunder Client / Postman.
-| Secara otomatis memiliki prefix /api (Contoh: http://127.0.0.1:8000/api/login)
-*/
+use App\Http\Controllers\BeritaController; // <-- 1. WAJIB ADA BARIS INI UNTUK MENGHUBUNGKAN KE CONTROLLER
 
 /*
 |--------------------------------------------------------------------------
@@ -21,7 +14,7 @@ use Illuminate\Support\Facades\Auth;
 |--------------------------------------------------------------------------
 */
 
-// Registrasi User Baru (Otomatis Role Penulis)
+// Registrasi User Baru via API
 Route::post('/register', function (Request $request) {
     $request->validate([
         'name' => 'required|string|max:255',
@@ -29,20 +22,26 @@ Route::post('/register', function (Request $request) {
         'password' => 'required|min:8',
     ]);
 
+    // Membuat string random 16 karakter untuk API Key otomatis saat daftar
+    $generatedApiKey = bin2hex(random_bytes(8)); 
+
     $user = User::create([
         'name' => $request->name,
         'email' => $request->email,
         'password' => Hash::make($request->password),
         'role' => 'penulis', 
+        'api_key' => $generatedApiKey,
     ]);
 
     return response()->json([
-        'message' => 'Registrasi Berhasil!',
+        'status' => 'success',
+        'message' => 'Registrasi Berhasil! Silakan catat API Key Anda.',
+        'api_key' => $user->api_key,
         'user' => $user
     ], 201);
 });
 
-// Login untuk mendapatkan API KEY
+// Login via API untuk mendapatkan API KEY
 Route::post('/login', function (Request $request) {
     $credentials = $request->validate([
         'email' => 'required|email',
@@ -52,123 +51,83 @@ Route::post('/login', function (Request $request) {
     if (Auth::attempt($credentials)) {
         $user = Auth::user();
         return response()->json([
+            'status' => 'success',
             'message' => 'Login Berhasil!',
-            'api_key' => $user->api_key, // Menampilkan API Key dari database
+            'api_key' => $user->api_key,
             'user' => $user
-        ]);
+        ], 200);
     }
 
-    return response()->json(['message' => 'Email atau Password salah.'], 401);
+    return response()->json([
+        'status' => 'error',
+        'message' => 'Email atau Password salah.'
+    ], 401);
 });
 
 
 /*
 |--------------------------------------------------------------------------
-| 2. RUTE TERPROTEKSI (Wajib Menggunakan x-api-key di Headers)
+| 2. RUTE TERPROTEKSI (Wajib Menggunakan x-api-key di Headers via Middleware)
 |--------------------------------------------------------------------------
 */
-
 Route::middleware(['api_key'])->group(function () {
 
-    // --- FITUR BERITA ---
+    // =========================================================================
+    // --- 2. FITUR CRUD BERITA (Sekarang Pendek Karena Memanggil BeritaController) ---
+    // =========================================================================
 
-    // Get All Berita
-    Route::get('/berita', function () {
-        $news = News::with('user')->get();
-        return response()->json([
-            'status' => 'success',
-            'data' => $news
-        ]);
-    });
-
-    // Update Berita (PUT)
-    Route::put('/berita/{id}', function (Request $request, $id) {
-        $berita = News::findOrFail($id);
-        $berita->update($request->all());
-        
-        return response()->json([
-            'message' => 'Berita berhasil diupdate!',
-            'data' => $berita
-        ]);
-    });
-
-
-    // Delete Berita (DELETE)
-    Route::delete('/berita/{id}', function ($id) {
-        $berita = News::findOrFail($id);
-        $berita->delete();
-        
-        return response()->json(['message' => 'Berita berhasil dihapus.']);
-    });
+    Route::get('/berita', [BeritaController::class, 'indexApi']);
+    Route::post('/berita', [BeritaController::class, 'storeApi']);
+    Route::put('/berita/{id}', [BeritaController::class, 'updateApi']);
+    Route::delete('/berita/{id}', [BeritaController::class, 'destroyApi']);
     
-    // Tambah Berita Baru (POST)
-    Route::post('/berita', function (Request $request) {
-        $request->validate([
-            'title' => 'required|string',
-            'content' => 'required',
-            'user_id' => 'required|exists:users,id',
-        ]);
 
-        $berita = News::create([
-            'title' => $request->title,
-            'content' => $request->content,
-            'user_id' => $request->user_id,
-            'status' => 'published', // Set otomatis published agar langsung muncul di home
-            'image' => 'default.jpg' // Placeholder jika sistem Anda wajib ada kolom image
-        ]);
+    // =========================================================================
+    // --- 3. FITUR CRUD USER (Tetap Di Sini Menggunakan Fungsi Manual) ---
+    // =========================================================================
 
-        return response()->json([
-            'message' => 'Berita berhasil ditambahkan!',
-            'data' => $berita
-        ], 201);
-    });
-
-
-    // --- FITUR USER ---
-
-    // Get All Data Users
+    // [GET ALL] Mengambil Semua Data User
     Route::get('/users', function () {
         $users = User::all();
         return response()->json([
             'status' => 'success',
             'total_user' => $users->count(),
             'data' => $users
-        ]);
+        ], 200);
     });
 
-    /**
-     * PERBAIKAN & TAMBAHAN:
-     * Menambahkan fitur Update dan Delete User melalui API
-     */
-
-    // Update User (PUT)
+    // [PUT] Update Data User via API
     Route::put('/users/{id}', function (Request $request, $id) {
         $user = User::findOrFail($id);
         
-        // Validasi opsional agar email tetap unik saat update
         $request->validate([
             'email' => 'sometimes|email|unique:users,email,' . $id,
         ]);
 
-        $user->update($request->all());
+        // Jika password diisi, lakukan hashing otomatis sebelum update
+        $input = $request->all();
+        if (!empty($input['password'])) {
+            $input['password'] = Hash::make($input['password']);
+        }
+
+        $user->update($input);
 
         return response()->json([
-            'message' => 'User berhasil diupdate!',
+            'status' => 'success',
+            'message' => 'Data user berhasil diperbarui!',
             'data' => $user
-        ]);
+        ], 200);
     });
 
-    // Delete User (DELETE)
+    // [DELETE] Hapus User via API
     Route::delete('/users/{id}', function ($id) {
         $user = User::findOrFail($id);
-        
-        // Mencegah menghapus diri sendiri jika sedang login (opsional)
-        // if (Auth::id() == $id) {
-        //     return response()->json(['message' => 'Tidak bisa menghapus akun sendiri!'], 403);
-        // }
-
         $user->delete();
-        return response()->json(['message' => 'User berhasil dihapus.']);
+        
+        return response()->json([
+            'status' => 'success',
+            'message' => 'User berhasil dihapus dari database.'
+        ], 200);
     });
 
 });

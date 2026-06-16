@@ -58,7 +58,7 @@
         </div>
 
         @if(session('success'))
-        <div class="mb-8 bg-emerald-50 border border-emerald-100 text-emerald-600 px-6 py-4 rounded-2xl flex items-center gap-3 font-bold text-sm shadow-sm animate-bounce">
+        <div class="mb-8 bg-emerald-50 border border-emerald-100 text-emerald-600 px-6 py-4 rounded-2xl flex items-center gap-3 font-bold text-sm shadow-sm">
             <i data-lucide="check-circle" class="w-5 h-5"></i>
             {{ session('success') }}
         </div>
@@ -76,8 +76,8 @@
                             <tr class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
                                 <th class="px-8 py-6">Informasi Berita</th>
                                 <th class="px-8 py-6 text-center">Status</th>
-                                <th class="px-8 py-6">Kategori</th>
-                                <th class="px-8 py-6">Aksi</th>
+                                <th class="px-8 py-6 text-center">Kategori</th>
+                                <th class="px-8 py-6 text-right">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-50">
@@ -91,7 +91,7 @@
                                                  onerror="this.src='https://placehold.co/100x100?text=No+Image'">
                                         </div>
                                         <div>
-                                            <div class="font-extrabold text-slate-900 group-hover:text-indigo-600 transition-colors">{{ $item->judul }}</div>
+                                            <div class="font-extrabold text-slate-900 group-hover:text-indigo-600 transition-colors">{{ $item->title }}</div>
                                             <div class="text-[10px] text-slate-400 font-bold mt-1 uppercase">{{ $item->created_at->translatedFormat('d M Y') }}</div>
                                         </div>
                                     </div>
@@ -103,17 +103,23 @@
                                         <span class="bg-amber-50 text-amber-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest italic">Pending</span>
                                     @endif
                                 </td>
-                                <td class="px-8 py-6">
-                                    <span class="text-xs font-bold text-slate-500 italic">#{{ $item->kategori }}</span>
+                                <td class="px-8 py-6 text-center">
+                                    <span class="text-xs font-bold text-slate-500 italic">#{{ $item->kategori ?? 'Berita' }}</span>
                                 </td>
                                 <td class="px-8 py-6">
-                                    <form action="{{ route('berita.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Hapus artikel ini?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
-                                            <i data-lucide="trash-2" class="w-5 h-5"></i>
-                                        </button>
-                                    </form>
+                                    <div class="flex items-center justify-end gap-2">
+                                        <a href="{{ route('berita.edit', $item->id) }}" class="p-3 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all" title="Lihat & Koreksi Berita">
+                                            <i data-lucide="edit-3" class="w-5 h-5"></i>
+                                        </a>
+
+                                        <form action="{{ route('berita.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus artikel berita ini?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all" title="Hapus Berita">
+                                                <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                            </button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                             @empty
@@ -196,12 +202,10 @@
             
             if (modal.classList.contains('hidden')) {
                 modal.classList.remove('hidden');
-                // Tambahkan sedikit delay agar animasi Tailwind berjalan
                 setTimeout(() => {
                     content.classList.remove('scale-95', 'opacity-0');
                     content.classList.add('scale-100', 'opacity-100');
                 }, 20);
-                // Mencegah body agar tidak ikut scroll saat modal terbuka
                 document.body.style.overflow = 'hidden';
             } else {
                 content.classList.add('scale-95', 'opacity-0');

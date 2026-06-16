@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str; // Ditambahkan untuk men-generate string acak API KEY
 
 class DashboardController extends Controller
 {
@@ -107,6 +108,75 @@ class DashboardController extends Controller
     }
 
     /**
+     * TAMBAHAN: Menampilkan halaman form edit (Melihat detail data berita sebelum di-edit)
+     */
+    public function edit($id)
+    {
+        $news = News::findOrFail($id);
+        
+        // Validasi Otoritas: Hanya penulis asli atau admin yang boleh masuk ke halaman edit
+        if (Auth::user()->role !== 'admin' && Auth::user()->id !== $news->user_id) {
+            return abort(403, 'Anda tidak memiliki izin untuk mengedit berita ini.');
+        }
+
+        return view('dashboard.edit', compact('news'));
+    }
+
+    /**
+     * TAMBAHAN: Menyimpan perubahan data edit berita & menurunkan status kembali menjadi 'pending'
+     */
+    public function update(Request $request, $id)
+    {
+        $news = News::findOrFail($id);
+
+        // Validasi Otoritas: Pastikan user berhak melakukan update
+        if (Auth::user()->role !== 'admin' && Auth::user()->id !== $news->user_id) {
+            return abort(403, 'Anda tidak memiliki izin untuk mengubah berita ini.');
+        }
+
+        $request->validate([
+            'judul' => 'required|max:255',
+            'isi_berita' => 'required',
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ], [
+            'foto.max' => 'Ukuran foto maksimal adalah 2MB',
+            'foto.image' => 'File yang diupload harus berupa gambar'
+        ]);
+
+        try {
+            $news->title = $request->judul;
+            $news->content = $request->isi_berita;
+            
+            // ATURAN ALUR: Kembalikan status menjadi pending agar wajib di-ACC Admin lagi
+            $news->status = 'pending';
+
+            // Jika kreator mengunggah file cover image baru
+            if ($request->hasFile('foto')) {
+                // Bersihkan/Hapus file gambar fisik yang lama agar tidak memenuhi local disk
+                $path_foto_lama = public_path('berita/' . $news->image);
+                if (File::exists($path_foto_lama) && !empty($news->image)) {
+                    File::delete($path_foto_lama);
+                }
+
+                // Proses upload gambar baru
+                $file = $request->file('foto');
+                $nama_foto = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $file->move(public_path('berita'), $nama_foto);
+                
+                $news->image = $nama_foto;
+            }
+
+            $news->save();
+
+            // Selesai, arahkan kembali ke dashboard utama dengan notifikasi flash message info
+            return redirect()->route('dashboard')->with('success', 'Berita berhasil diperbarui dan dikirim ulang untuk menunggu persetujuan Admin!');
+
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Gagal memperbarui data berita: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
      * Menghapus berita dan file fisiknya
      */
     public function destroy($id)
@@ -129,11 +199,17 @@ class DashboardController extends Controller
         return abort(403, 'Anda tidak memiliki izin.');
     }
 
+    /**
+     * Menampilkan Halaman Profile & API Credentials
+     */
     public function profile()
     {
         return view('dashboard.profile');
     }
 
+    /**
+     * Memperbarui Data Profil User (Nama, Email, Password)
+     */
     public function updateProfile(Request $request)
     {
         $user = Auth::user();
@@ -154,5 +230,19 @@ class DashboardController extends Controller
         $user->save();
 
         return back()->with('success', 'Profil Anda berhasil diperbarui!');
+    }
+
+    /**
+     * TAMBAHAN EAS: Men-generate atau memperbarui API KEY unik untuk User secara mandiri
+     */
+    public function generateApiKey(Request $request)
+    {
+        $user = Auth::user();
+        
+        // Menghasilkan string acak unik sepanjang 32 karakter dengan prefix 'news_'
+        $user->api_key = 'news_' . Str::random(32);
+        $user->save();
+
+        return back()->with('success', 'API KEY baru berhasil dibuat! Silakan cek bagian bawah halaman.');
     }
 }

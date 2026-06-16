@@ -93,7 +93,7 @@
 
         <p class="text-center mt-8 text-slate-400 text-sm font-medium">
             &copy; 2026 NewsDigital Tech. <br>
-            <span class="text-xs uppercase tracking-widest">Portal Berita - Muhammad Fahmi Abdillah Mahri</span>
+            <span class="text-xs uppercase tracking-widest">Portal Berita - Kelompok 6</span>
         </p>
     </div>
 

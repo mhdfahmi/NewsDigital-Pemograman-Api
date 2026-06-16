@@ -23,7 +23,15 @@
                 <span class="font-black text-xl tracking-tighter italic">NEWS<span class="text-indigo-600">Digital</span></span>
             </div>
             
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-6">
+                <a href="{{ route('api.documentation') }}" class="text-slate-600 font-extrabold text-xs tracking-wider hover:text-indigo-600 transition-colors flex items-center gap-1.5 uppercase">
+                    <i data-lucide="book-open" class="w-4 h-4"></i> Dokumentasi API
+                </a>
+
+                <a href="{{ route('api.client_test') }}" class="text-slate-600 font-extrabold text-xs tracking-wider hover:text-indigo-600 transition-colors flex items-center gap-1.5 uppercase">
+                    <i data-lucide="flask-conical" class="w-4 h-4"></i> API Client Test
+                </a>
+
                 @auth
                     <a href="{{ route('dashboard') }}" class="text-slate-600 font-bold text-sm hover:text-indigo-600 transition-colors">
                         DASHBOARD
