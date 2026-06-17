@@ -3,7 +3,7 @@
     "outputDirectory": ".",
     "functions": {
         "api/index.php": {
-            "runtime": "vercel-php@latest"
+            "runtime": "vercel-php@0.6.0"
         }
     },
     "routes": [
@@ -15,5 +15,11 @@
             "src": "/(.*)",
             "dest": "/api/index.php"
         }
-    ]
+    ],
+    "crons": [],
+    "build": {
+        "env": {
+            "NODE_VERSION": "18"
+        }
+    }
 }
