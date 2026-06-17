@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NewsDigital</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+
+    <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <div class="bg-indigo-600 p-2 rounded-lg text-white">
+                    <i data-lucide="zap" class="w-5 h-5 fill-current"></i>
+                </div>
+                <span class="font-black text-xl tracking-tighter italic">NEWS<span class="text-indigo-600">Digital</span></span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-6 py-12">
+        <div class="mb-12">
+            <h1 class="text-4xl font-black text-slate-900 mb-4 tracking-tight">Berita <span class="text-indigo-600">Terbaru</span></h1>
+        </div>
+
+        <div id="news-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        // Mengambil data dari API yang Anda buat di index.js
+        fetch('/api/news')
+            .then(response => response.json())
+            .then(result => {
+                const container = document.getElementById('news-container');
+                if (result.status === 'success') {
+                    container.innerHTML = result.data.map(item => `
+                        <article class="bg-white rounded-[32px] p-8 border border-slate-100 hover:shadow-xl transition-all">
+                            <h3 class="text-xl font-extrabold text-slate-900 mb-3">${item.title}</h3>
+                            <p class="text-slate-500 text-sm mb-4">${item.content}</p>
+                            <span class="text-xs font-bold text-indigo-600 uppercase">Oleh: ${item.author}</span>
+                        </article>
+                    `).join('');
+                }
+            })
+            .catch(err => {
+                console.error("Gagal mengambil data:", err);
+                document.getElementById('news-container').innerHTML = "<p>Gagal memuat berita.</p>";
+            });
+    </script>
+</body>
+</html>

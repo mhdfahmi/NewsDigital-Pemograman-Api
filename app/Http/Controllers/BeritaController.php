@@ -3,19 +3,30 @@
 namespace App\Http\Controllers;
 
 use App\Models\News;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class BeritaController extends Controller
 {
+    // Helper untuk memvalidasi API Key
+    private function validateApiKey(Request $request) {
+        $apiKey = $request->header('x-api-key');
+        
+        // Cek apakah key ada dan valid di tabel users
+        $user = User::where('api_key', $apiKey)->first();
+        
+        return $user;
+    }
+
     // --- KHUSUS HALAMAN WEB ---
     public function index() {
         $berita = News::latest()->get();
         return view('home', compact('berita'));
     }
 
-    // --- KHUSUS ENDPOINT API POSTMAN/THUNDER CLIENT ---
+    // --- KHUSUS ENDPOINT API ---
     
-    // Get All Api
+    // Get All Api (Publik - tanpa API Key pun bisa)
     public function indexApi() {
         $berita = News::with('user')->latest()->get();
         return response()->json([
@@ -25,8 +36,12 @@ class BeritaController extends Controller
         ], 200);
     }
 
-    // Store Api
+    // Store Api (Memerlukan API Key)
     public function storeApi(Request $request) {
+        if (!$this->validateApiKey($request)) {
+            return response()->json(['status' => 'error', 'message' => 'API Key Tidak Valid!'], 401);
+        }
+
         $request->validate([
             'title' => 'required|string',
             'content' => 'required',
@@ -54,15 +69,23 @@ class BeritaController extends Controller
         return response()->json(['status' => 'success', 'message' => 'Berita berhasil dibuat!', 'data' => $berita], 201);
     }
 
-    // Update Api
+    // Update Api (Memerlukan API Key)
     public function updateApi(Request $request, $id) {
+        if (!$this->validateApiKey($request)) {
+            return response()->json(['status' => 'error', 'message' => 'API Key Tidak Valid!'], 401);
+        }
+
         $berita = News::findOrFail($id);
         $berita->update($request->all());
         return response()->json(['status' => 'success', 'message' => 'Berita berhasil diupdate!', 'data' => $berita], 200);
     }
 
-    // Destroy Api
-    public function destroyApi($id) {
+    // Destroy Api (Memerlukan API Key)
+    public function destroyApi(Request $request, $id) {
+        if (!$this->validateApiKey($request)) {
+            return response()->json(['status' => 'error', 'message' => 'API Key Tidak Valid!'], 401);
+        }
+
         $berita = News::findOrFail($id);
         if ($berita->image && $berita->image != 'default.jpg' && file_exists(public_path('berita/' . $berita->image))) {
             @unlink(public_path('berita/' . $berita->image));
