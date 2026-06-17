@@ -1,6 +1,6 @@
 <?php
 
-// Mengarahkan ke file autoload dan app bawaan Laravel
+// Mengarahkan keluar folder api untuk membaca vendor dan bootstrap Laravel
 require __DIR__ . '/../vendor/autoload.php';
 $app = require_once __DIR__ . '/../bootstrap/app.php';
 
